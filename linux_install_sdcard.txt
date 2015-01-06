@@ -1,0 +1,128 @@
+
+
+Debian Wheezy (7.0) A20 Olimex Board Install
+
+Hardware Requirements:
+
+-A20 Cortex-A7 dual-core ARM Cortex-A7 CPU and dual-core Mali 400 GPU
+-1GB DDR3 RAM memory
+-4GB NAND FLASH memory
+-MicroSD Card (suggested 8GB)
+-UART Serial Cable
+
+Software:
+u-boot (https://github.com/linux-sunxi/u-boot-sunxi.git)
+linux kernel 3.4 (https://github.com/linux-sunxi/linux-sunxi)
+a20_defconfig (https://drive.google.com/file/d/0B-bAEPML8fwlNzBNN1N2SGpmblk/edit?usp=sharing)
+sunxi-i2c.patch (https://drive.google.com/file/d/0B-bAEPML8fwlSW44ZGdOUDUxRzA/edit?usp=sharing)
+script.bin (https://drive.google.com/file/d/0B-bAEPML8fwlMUs2eG5UN00yNzA/edit?usp=sharing)
+
+
+1. Setup of the toolchain
+
+edit /etc/apt/sources.list and add the repository:
+deb http://www.emdebian.org/debian squeeze main 
+
+run the line command:
+# apt-get update
+
+install the softwares necessaries to make the A20 kernel image:
+# apt-get install gcc-4.7-arm-linux-gnuabihf ncurses-dev uboot-mkimage build-essential git
+
+2.Building Uboot
+
+-Create the directory where it will be built the A20-OLinuXino-Micro
+# mkdir a20_kernel_3.4
+# cd a20_kernel_3.4
+
+-Download the u-boot sources from GitHub repository:
+# git rev-parse --verify HEAD
+8a4621c488f33089d831168bfa5bae210a5684c8
+# git clone -b sunxi https://github.com/linux-sunxi/u-boot-sunxi.git
+
+-Start the uboot build:
+# cd u-boot-sunxi
+# make a20_olinux_micro CROSS_COMPILE=arm-linux-gnueabihf-
+
+-Check if everything is OK
+#  ls u-boot.bin u-boot-sunxi-with-spl.bin spl/sunxi-spl.bin
+spl/sunxi-spl.bin u-boot.bin u-boot-sunxi-with-spl.bin
+
+3. Building kernel sources for Olinuxino-A20-Micro
+
+-Kernel sources for A20 are available on gitHub
+# git rev-parse --verify HEAD
+a7350cb6a9ec1aae510e26cdc730f05f12e13f9f
+
+# git clone https://github.com/linux-sunxi/linux-sunxi
+
+- Download the a20_defconfig file then copy to configs directory and make:
+# cp a20_defconfig linux-sunxi/arch/arm/configs/
+# maker ARCH=arm a20_defconfig
+
+- If you wish to make your changes in the kernel configuration do:
+# make ARCH=arm menuconfig
+
+- Note that before compiling kernel you have to do a patch realted with I2C speed. The patch changes i2c speed from 200kHz to 100kHz.
+If you want to use some of olimex’s i2c modules on UEXT then you need from this patch
+
+# patch -p0 < sunxi-i2c.patch
+
+- Now you can compiling the kernel image:
+# make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j4 uImage
+ 
+ If everython it's OK you should see:
+
+Image Name: Linux-3.4.67+
+Created: Mon Sep 16 13:39:04 2013
+Image Type: ARM Linux Kernel Image (uncompressed)
+Data Size: 5450904 Bytes = 5323.15 kB = 5.20 MB
+Load Address: 40008000
+Entry Point: 40008000
+Image arch/arm/boot/uImage is ready
+
+- Build the kernel modules:
+
+# make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j4 INSTALL_MOD_PATH=out modules
+# make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j4 INSTALL_MOD_PATH=out modules_install
+
+DONE! At this point you have uboot and kernel modules.
+The uImage file is located in linux-sunxi/arch/arm/boot/
+The kernel modules are located in linux-sunxi/out/lib/modules/3.4.103+
+
+4. Format and setup the SD-card
+
+- Make the correct card partitions using fdisk:
+# ls /dev/sd
+# fdisk /dev/sdX
+Partition1 = 16MB
+Partition2 = 
+
+- The first partition should be VFAT as this is the filesystem which the Allwinner bootloader understands:
+# mkfs.vfat /dev/sdX1
+
+- The second should be normal Linux EXT3 filesystem:
+# mkfs.ext3 /dev/sdX2
+
+5. Write the Uboot and sunxi-spl.bin
+
+# cd <HOME_FOLDER>/a20_kernel_3.4
+# dd if=u-boot-sunxi/u-boot-sunxi-with-spl.bin of=/dev/sdX bs=1024 seek=8
+
+6. Write kernel uImage to the SD-card
+
+# cd <HOME_FOLDER>/a20_kernel_3.4
+# mount /dev/sdX1 /mnt/sd
+#cp linux-sunxi/arch/arm/boot/uImage /mnt/sd
+
+7. Write script.bin file
+
+# cd <HOME_FOLDER>/a20_kernel_3.4
+# cp script.bin /mnt/sd
+# sync
+# umount /dev/sdX1
+
+8. Debian rootfs
+
+# cd <HOME_FOLDER>/a20_kernel_3.4
+# 
