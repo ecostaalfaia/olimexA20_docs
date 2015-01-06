@@ -1,0 +1,15 @@
+1. Download the sourcecode from sourceforge
+git clone git://github.com/ecostaalfaia/aufs-standalone.git
+
+2. Patch the source.
+A. Copy three patches(aufs3-kbuild.patch, aufs3-base.patch, aufs3-mmap.patch) into the root folder of kernel source.
+B. Using the following command to patch the files.
+patch -p1 < XXX.patch
+
+
+3. Copy the files. copy ./{Documentation,fs,include/linux/aufs_type.h} files to your
+  kernel source tree. Never copy $PWD/include/linux/Kbuild.
+
+4. enable CONFIG_EXPERIMENTAL and CONFIG_AUFS_FS, you can select =y in your .config 
+
+5. Build the Kernel
