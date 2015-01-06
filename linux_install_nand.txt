@@ -12,6 +12,9 @@
 # /dev/nandb is MAGIC device
 #
 #############################################################################
+#Get olinuxino-a20-flashinstall folder from github:
+
+git clone git://github.com/ecostaalfaia/olimexA20_docs.git
 
 # First of all, make sure that all nand devices /dev/nand* are unmounted 
 # (check output of mount if you are not sure)
